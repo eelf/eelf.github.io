@@ -1,0 +1,139 @@
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<style type="text/css">
+    * {
+        background-color: #222;
+        color: #3f9;
+        font: 14px Monaco;
+    }
+</style>
+<div id="app"></div>
+<script type="application/javascript">
+    function e(tag, attrs, ...children) {
+        const styleAttr = 'attributeStyleMap';
+
+        let el = document.createElement(tag);
+
+        if (attrs !== undefined && attrs !== null && typeof (attrs[styleAttr]) !== 'undefined') {
+            Object.entries(attrs[styleAttr]).forEach(([k, v]) => el[styleAttr].set(k, v));
+            delete attrs[styleAttr];
+        }
+
+        Object.assign(el, attrs);
+
+        for (let c of children) {
+            el.appendChild(c);
+        }
+        return el;
+    }
+
+    function rub(a, fracDigs) {
+        fracDigs = fracDigs === undefined ? 2 : fracDigs;
+        return (
+            ([i, f]) =>
+                (a => f === undefined || parseInt(f) === 0 ? a : [...a, f])(
+                    [
+                        [...i].reverse().reduce((acc, v, i) => i % 3 == 2 ? ' ' + v + acc : v + acc)
+                    ]).join('.')
+        )(a.toFixed(fracDigs).split('.')).trim() + '₽';
+    }
+
+    function percent(a) {
+        return (b => {
+            if (b >= 10) return b.toFixed(0);
+            else if (b >= 1) return b.toFixed(1);
+            else return b.toFixed(2);
+        })((a * 100)) + '%';
+    }
+
+    function calcLoop(rate, pay, creditOrig) {
+        let totalPay = 0;
+        let totalInt = 0;
+        let months = 0;
+        let credit = creditOrig;
+        let plan = [];
+        while (credit > 0) {
+            months++;
+            let int = credit * rate;
+            totalInt += int;
+            if (credit < (pay - int)) {
+                pay = credit + int;
+            }
+            totalPay += pay;
+            credit -= pay - int;
+            plan.push([int, pay]);
+        }
+        return  'months: ' + months + ' years:' + (months / 12).toFixed(2)
+            + '\neffRate: ' + percent(totalInt/creditOrig)
+            + '\npay: ' + rub(pay)
+            + '\nintTotal: ' + rub(totalInt) + ' payTotal: ' + rub(totalPay)
+            + '\n' + plan.map(([i, p]) => rub(i) + ':' + rub(p)).join(' ');
+    }
+
+    function calcParams(rate, monthsOrig, credit) {
+        let months = Math.ceil(monthsOrig);
+        let effRate = rate * (months + 1) / 2;
+        let payBody = credit / months;
+        let int = i => (credit - credit / months * i) * rate;
+        let int0 = int(0),
+            intMid = int(months / 2),
+            intLast = int(months - 1);
+
+        let plan = Array(months).fill(0).map((_, i)=>[int(i), int(i)+payBody]);
+        [intTotal, payTotal] = plan.reduce(([ci, cp],[i, p])=>[ci+i,cp+p],[0,0])
+        let pad = (s, c) => ' '.repeat(c-s.length)+s;
+
+        return 'months: ' + monthsOrig + ' years:' + (months / 12).toFixed(2)
+            + '\neffRate: ' + percent(effRate)
+            + '\npayBody: ' + rub(payBody)
+            + '\nint_0: ' + rub(int0).padStart(14) + ' pay_0: ' + rub(payBody + int0)
+            + '\nint_5: ' + rub(intMid).padStart(14) + ' pay_5: ' + rub(payBody + intMid)
+            + '\nint_9: ' + rub(intLast).padStart(14) + ' pay_9: ' + rub(payBody + intLast)
+            + '\nint_s: ' + rub(intTotal).padStart(14) + ' pay_s: ' + rub(payTotal)
+            + '\n' + plan.map(([i, p]) => rub(i) + ':' + rub(p)).join(' ');
+    }
+    function calc() {
+        let {credit: credit, pay0:pay0, rateAnnual:rateAnnual} = read();
+        let rate = rateAnnual / 12;
+        if (rateAnnual > .2 || pay0 < 10000) return;
+
+        let months = credit / (pay0 - credit * rate);
+        let monthsMid = credit * (1 + rate / 2) / (pay0 - credit * rate / 2);
+        // console.log('months', months);
+        if (months < 1 || months > 1200) return;
+
+        monthsEl.textContent = calcParams(rate, months, credit)
+        + '\n\n' + calcLoop(rate, pay0, credit)
+        + '\n\n' + calcParams(rate, monthsMid, credit);
+    }
+    function read() {
+        return {
+            credit: (t => parseFloat(t.replace(/[^0-9.e]/g, '')))(creditEl.textContent),
+            pay0: (t => parseFloat(t.replace(/[^0-9.e]/g, '')))(payMaxEl.textContent),
+            rateAnnual: parseFloat(rateEl.textContent),
+        }
+    }
+    function blur() {
+        let {credit: credit, pay0:pay0} = read();
+        creditEl.textContent = rub(credit, 0);
+        payMaxEl.textContent = rub(pay0, 0);
+    }
+
+    let root = document.getElementById('app');
+    let creditEl = e('div', {contentEditable: true, textContent: '11 000 000 ₽', onkeyup: calc, onblur: blur});
+    let rateEl = e('div', {contentEditable: true, textContent: '.05', onkeyup: calc});
+    let payMaxEl = e('div', {contentEditable: true, textContent: '180 000 ₽', onkeyup: calc, onblur: blur});
+    let monthsEl = e('div', {attributeStyleMap: {'white-space': 'pre-wrap'}});
+
+
+    root.appendChild(
+        e('div', null,
+            e('div', null, e('div', {textContent: 'credit'}), creditEl),
+            e('div', null, e('div', {textContent: 'rate'}), rateEl),
+            e('div', null, e('div', {textContent: 'payMax'}), payMaxEl),
+            monthsEl)
+    );
+    // ['Andale Mono', 'Menlo', 'Monaco'].forEach(i =>
+    //     root.appendChild(e('div', {attributeStyleMap:{font:'26px '+ i}, textContent: i + ' 000 123 456 789 ₽'}))
+    // );
+    calc();
+</script>
