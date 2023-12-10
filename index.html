@@ -1,4 +1,91 @@
-<html><head>
-<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-</head><body><div id="app"></div><script src="main.js"></script></body></html>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<style type="text/css">
+    * {
+        background-color: #222;
+        color: #3f9;
+        font: 14px Monaco;
+    }
+</style>
+<a href="/ipo.html">ipo</a>
+<div id="app"></div>
+<script type="application/javascript">
+
+    Array.prototype.interleave = function (glue) {
+        return this.reduce((acc, v) => {
+            if (acc.length != 0) acc.push(glue.cloneNode());
+            acc.push(v);
+            return acc;
+        }, []);
+    };
+
+    function t(text) {
+        return document.createTextNode(text);
+    }
+
+    function e(tag, attrs, ...children) {
+        const styleAttr = 'attributeStyleMap';
+
+        let el = document.createElement(tag);
+
+        if (attrs !== undefined && attrs !== null && typeof (attrs[styleAttr]) !== 'undefined') {
+            Object.entries(attrs[styleAttr]).forEach(([k, v]) => el[styleAttr].set(k, v));
+            delete attrs[styleAttr];
+        }
+
+        Object.assign(el, attrs);
+
+        for (let c of children) {
+            el.appendChild(c);
+        }
+        return el;
+    }
+
+    let root = document.getElementById('app');
+    let list = [];
+    let filter = null;
+
+    function renderItem(item) {
+        return e('li', null,
+            t(item.title + ' '),
+            ...item.in.map(v => e(
+                'span',
+                {
+                    textContent: v,
+                    attributeStyleMap: {
+                        color: filter === v ? 'blue' : 'royalblue',
+                        'border-bottom': '1px dashed',
+                        cursor: 'pointer'
+                    },
+                    onmouseenter: function () {
+                        this.style.borderBottom = '1px dotted';
+                    },
+                    onmouseleave: function () {
+                        this.style.borderBottom = '1px dashed';
+                    },
+                    onclick: function () {
+                        filter = filter !== v ? v : null;
+                        render();
+                    },
+                })).interleave(t(' ')),
+            e('div', {textContent: item.steps})
+        );
+    }
+
+    function render() {
+        root.textContent = '';
+
+        root.appendChild(
+            e('ul', null, ...list
+                .filter(v => {
+                    return filter == null || v.in.indexOf(filter) !== -1;
+                })
+                .map(renderItem)
+            )
+        );
+    }
+
+    fetch('recipe.json').then(r => r.json()).then(r => {
+        list = r;
+        render();
+    });
+</script>

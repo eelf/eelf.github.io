@@ -1,0 +1,98 @@
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<style type="text/css">
+    * {
+        background-color: #222;
+        color: #3f9;
+        font: 14px Monaco;
+    }
+</style>
+<div id="app"></div>
+<script type="application/javascript">
+    function e(tag, attrs, ...children) {
+        const styleAttr = 'attributeStyleMap';
+
+        let el = document.createElement(tag);
+
+        if (attrs !== undefined && attrs !== null && typeof (attrs[styleAttr]) !== 'undefined') {
+            Object.entries(attrs[styleAttr]).forEach(([k, v]) => el[styleAttr].set(k, v));
+            delete attrs[styleAttr];
+        }
+
+        Object.assign(el, attrs);
+
+        for (let c of children) {
+            el.appendChild(c);
+        }
+        return el;
+    }
+
+    function rub(a, fracDigs) {
+        fracDigs = fracDigs === undefined ? 2 : fracDigs;
+        return (
+            ([i, f]) =>
+                (a => f === undefined || parseInt(f) === 0 ? a : [...a, f])(
+                    [
+                        [...i].reverse().reduce((acc, v, i) => i % 3 == 2 ? '\u00a0' + v + acc : v + acc)
+                    ]).join('.')
+        )(a.toFixed(fracDigs).split('.')).trim() + '₽';
+    }
+
+    function percent(a) {
+        return (b => {
+            if (b >= 10) return b.toFixed(0);
+            else if (b >= 1) return b.toFixed(1);
+            else return b.toFixed(2);
+        })((a * 100)) + '%';
+    }
+
+    function calc() {
+        let {rateAnnual: rateAnnual} = read();
+        let rate = rateAnnual / 12;
+        if (rateAnnual > .2) {
+            monthsOverCreditPayEl.textContent = 'rate is too high';
+            return;
+        }
+
+        //=IFERROR(ceiling(C$25*(1+$B$25/2)/($A26-C$25*$B$25/2));0)
+        //months=credit*(1+rate/2)/(pay-credit*rate/2)
+
+        //=C$25*(1/$A40+$B$25/2*(1+1/$A40))
+        //=C$60/(1/$A61+$B$25/2*(1+1/$A61))
+        let months = credit / (pay0 - credit * rate);
+        if (months < 1 || months > 1200) {
+            monthsEl.textContent = 'months = credit / (pay0 - credit * rate) = ' + months;
+            return;
+        }
+        let monthsMid = credit * (1 + rate / 2) / (pay0 - credit * rate / 2);
+
+        monthsEl.textContent = calcParams(rate, months, credit)
+            + '\n\n' + calcLoop(rate, pay0, credit)
+            + '\n\n' + calcParams(rate, monthsMid, credit);
+    }
+
+    function read() {
+        return {
+            rateAnnual: parseFloat(rateEl.textContent),
+        }
+    }
+
+    let root = document.getElementById('app');
+    let rateEl = e('div', {contentEditable: true, textContent: '.05', onkeyup: calc});
+    let monthsOverCreditPayEl = e('div', {attributeStyleMap: {'white-space': 'pre-wrap'}});
+    let payOverCreditMonthsEl = e('div', {attributeStyleMap: {'white-space': 'pre-wrap'}});
+    let creditOverPayMonthsEl = e('div', {attributeStyleMap: {'white-space': 'pre-wrap'}});
+
+
+    root.appendChild(
+        e('div', null,
+            e('div', null,
+                e('div', {textContent: 'rate'}),
+                rateEl),
+            e('hr'),
+            monthsOverCreditPayEl,
+            payOverCreditMonthsEl,
+            creditOverPayMonthsEl,
+        )
+    );
+    calc();
+</script>

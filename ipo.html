@@ -32,7 +32,7 @@
             ([i, f]) =>
                 (a => f === undefined || parseInt(f) === 0 ? a : [...a, f])(
                     [
-                        [...i].reverse().reduce((acc, v, i) => i % 3 == 2 ? ' ' + v + acc : v + acc)
+                        [...i].reverse().reduce((acc, v, i) => i % 3 == 2 ? '\u00a0' + v + acc : v + acc)
                     ]).join('.')
         )(a.toFixed(fracDigs).split('.')).trim() + '₽';
     }
@@ -62,8 +62,8 @@
             credit -= pay - int;
             plan.push([int, pay]);
         }
-        return  'months: ' + months + ' years:' + (months / 12).toFixed(2)
-            + '\neffRate: ' + percent(totalInt/creditOrig)
+        return 'months: ' + months + ' years:' + (months / 12).toFixed(2)
+            + '\neffRate: ' + percent(totalInt / creditOrig)
             + '\npay: ' + rub(pay)
             + '\nintTotal: ' + rub(totalInt) + ' payTotal: ' + rub(totalPay)
             + '\n' + plan.map(([i, p]) => rub(i) + ':' + rub(p)).join(' ');
@@ -78,9 +78,8 @@
             intMid = int(months / 2),
             intLast = int(months - 1);
 
-        let plan = Array(months).fill(0).map((_, i)=>[int(i), int(i)+payBody]);
-        [intTotal, payTotal] = plan.reduce(([ci, cp],[i, p])=>[ci+i,cp+p],[0,0])
-        let pad = (s, c) => ' '.repeat(c-s.length)+s;
+        let plan = Array(months).fill(0).map((_, i) => [int(i), int(i) + payBody]);
+        [intTotal, payTotal] = plan.reduce(([ci, cp], [i, p]) => [ci + i, cp + p], [0, 0])
 
         return 'months: ' + monthsOrig + ' years:' + (months / 12).toFixed(2)
             + '\neffRate: ' + percent(effRate)
@@ -91,20 +90,31 @@
             + '\nint_s: ' + rub(intTotal).padStart(14) + ' pay_s: ' + rub(payTotal)
             + '\n' + plan.map(([i, p]) => rub(i) + ':' + rub(p)).join(' ');
     }
+
     function calc() {
-        let {credit: credit, pay0:pay0, rateAnnual:rateAnnual} = read();
+        let {credit: credit, pay0: pay0, rateAnnual: rateAnnual} = read();
         let rate = rateAnnual / 12;
-        if (rateAnnual > .2 || pay0 < 10000) return;
+        if (rateAnnual > .2) {
+            monthsEl.textContent = 'rate is too high';
+            return;
+        }
+        if (pay0 < 10000) {
+            monthsEl.textContent = 'pay is too low';
+            return;
+        }
 
         let months = credit / (pay0 - credit * rate);
+        if (months < 1 || months > 1200) {
+            monthsEl.textContent = 'months = credit / (pay0 - credit * rate) = ' + months;
+            return;
+        }
         let monthsMid = credit * (1 + rate / 2) / (pay0 - credit * rate / 2);
-        // console.log('months', months);
-        if (months < 1 || months > 1200) return;
 
         monthsEl.textContent = calcParams(rate, months, credit)
-        + '\n\n' + calcLoop(rate, pay0, credit)
-        + '\n\n' + calcParams(rate, monthsMid, credit);
+            + '\n\n' + calcLoop(rate, pay0, credit)
+            + '\n\n' + calcParams(rate, monthsMid, credit);
     }
+
     function read() {
         return {
             credit: (t => parseFloat(t.replace(/[^0-9.e]/g, '')))(creditEl.textContent),
@@ -112,8 +122,9 @@
             rateAnnual: parseFloat(rateEl.textContent),
         }
     }
+
     function blur() {
-        let {credit: credit, pay0:pay0} = read();
+        let {credit: credit, pay0: pay0} = read();
         creditEl.textContent = rub(credit, 0);
         payMaxEl.textContent = rub(pay0, 0);
     }
@@ -127,13 +138,17 @@
 
     root.appendChild(
         e('div', null,
-            e('div', null, e('div', {textContent: 'credit'}), creditEl),
-            e('div', null, e('div', {textContent: 'rate'}), rateEl),
-            e('div', null, e('div', {textContent: 'payMax'}), payMaxEl),
+            e('div', null,
+                e('div', {textContent: 'credit'}),
+                creditEl),
+            e('div', null,
+                e('div', {textContent: 'rate'}),
+                rateEl),
+            e('div', null,
+                e('div', {textContent: 'payMax'}),
+                payMaxEl),
+            e('hr'),
             monthsEl)
     );
-    // ['Andale Mono', 'Menlo', 'Monaco'].forEach(i =>
-    //     root.appendChild(e('div', {attributeStyleMap:{font:'26px '+ i}, textContent: i + ' 000 123 456 789 ₽'}))
-    // );
     calc();
 </script>
