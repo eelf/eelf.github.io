@@ -1,0 +1,148 @@
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<style type="text/css">
+    * {
+        background-color: #222;
+        color: #3f9;
+        font: 14px Monaco;
+    }
+</style>
+<div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!--<script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.min.js"></script>-->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script type="application/javascript">
+    let sher = '2023-03-27\t238247,87\t5,002875E+06\t234088,67\t5,187E+06\n' +
+        '2023-04-09\t247331,13\t5,242044E+06\t247369,22\t4,725E+06\n' +
+        '2023-05-04\t237615,91\t5,845932E+06\t242576,07\t5,085E+06\n' +
+        '2023-05-28\t242705,41\t5,815961E+06\t242351,15\t5,349E+06\n' +
+        '2023-07-21\t233677,93\t6,956802E+06\t228147,05\t7,095E+06\n' +
+        '2023-08-01\t248287,12\t6,424569E+06\t245446,18\t6,120E+06\n' +
+        '2023-08-13\t237819,86\t7,581671E+06\t232381,77\t7,234E+06\n' +
+        '2023-09-18\t262016,05\t5,994199E+06\t258687,49\t6,078E+06\n' +
+        '2023-10-17\t315161,15\t3,929761E+06\t319516,05\t3,536E+06\n' +
+        '2023-11-04\t305610,60\t4,604679E+06\t309618,33\t4,251E+06\n' +
+        '2023-12-10\t295439,35\t4,959870E+06\t298328,06\t4,544E+06\n' +
+        '2023-12-31\t294579,63\t5,213005E+06\t297550,12\t4,760E+06\n' +
+        '2024-01-24\t305177,39\t4,500662E+06\t309560,14\t4,145E+06\n' +
+        '2024-02-18\t333728,80\t3,207144E+06\t325516,27\t3,385E+06\n' +
+        '2024-03-07\t352848,86\t2,146527E+06\t342706,33\t2,572E+06\n' +
+        '2024-04-06\t319541,78\t3,476481E+06\t308685,40\t3,915E+06';
+    function e(tag, attrs, ...children) {
+        const styleAttr = 'attributeStyleMap';
+
+        let el = document.createElement(tag);
+
+        if (attrs !== undefined && attrs !== null && typeof (attrs[styleAttr]) !== 'undefined') {
+            Object.entries(attrs[styleAttr]).forEach(([k, v]) => el[styleAttr].set(k, v));
+            delete attrs[styleAttr];
+        }
+
+        Object.assign(el, attrs);
+
+        for (let c of children) {
+            el.appendChild(c);
+        }
+        return el;
+    }
+
+    function calc() {
+
+
+        return;
+
+        let {rateAnnual: rateAnnual} = read();
+        let rate = rateAnnual / 12;
+        if (rateAnnual > .2) {
+            monthsOverCreditPayEl.textContent = 'rate is too high';
+            return;
+        }
+
+        //=IFERROR(ceiling(C$25*(1+$B$25/2)/($A26-C$25*$B$25/2));0)
+        //months=credit*(1+rate/2)/(pay-credit*rate/2)
+
+        //=C$25*(1/$A40+$B$25/2*(1+1/$A40))
+        //=C$60/(1/$A61+$B$25/2*(1+1/$A61))
+        let months = credit / (pay0 - credit * rate);
+        if (months < 1 || months > 1200) {
+            monthsEl.textContent = 'months = credit / (pay0 - credit * rate) = ' + months;
+            return;
+        }
+        let monthsMid = credit * (1 + rate / 2) / (pay0 - credit * rate / 2);
+
+        monthsEl.textContent = calcParams(rate, months, credit)
+            + '\n\n' + calcLoop(rate, pay0, credit)
+            + '\n\n' + calcParams(rate, monthsMid, credit);
+    }
+
+    function read() {
+        return {
+            rateAnnual: parseFloat(rateEl.textContent),
+        }
+    }
+
+    let root = document.getElementById('app');
+    let rateEl = e('div', {contentEditable: true, textContent: '.05', onkeyup: calc});
+    let monthsOverCreditPayEl = e('div', {attributeStyleMap: {'white-space': 'pre-wrap'}});
+    let payOverCreditMonthsEl = e('div', {attributeStyleMap: {'white-space': 'pre-wrap'}});
+    let creditOverPayMonthsEl = e('div', {attributeStyleMap: {'white-space': 'pre-wrap'}});
+
+    let graph = e('canvas');
+
+    let parseDate = d => {
+        d = d.split('-');
+        return new Date(d[0], d[1]-1, d[2]);
+    };
+    let googleFloat = f => f.replace(',', '.');
+    sher = sher.split('\n').map((row) => (a => {
+        return {
+            date: a[0],
+            dateParsed: parseDate(a[0]),
+            k: parseFloat(googleFloat(a[1])),
+            b: parseFloat(googleFloat(a[2])),
+            kf: parseFloat(googleFloat(a[3])),
+            bf: parseFloat(googleFloat(a[4]))
+        };
+    })(row.split('\t')));
+
+    sher.sort((a, b) => a.date - b.date);
+
+    console.log(sher);
+
+    new Chart(graph, {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    data: sher.map(a => ({x: a.date, y: a.kf*50+a.bf})),
+                    label: 'price 50 sq.m filtered(dist<10)'
+                },
+                {
+                    data: sher.map(a => ({x: a.date, y: a.k*50+a.b})),
+                    label: 'price 50 sq.m'
+                }
+            ]
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'time'
+                }
+            }
+        }
+    });
+
+
+    root.appendChild(
+        e('div', null,
+            e('div', null,
+                e('div', {textContent: 'rate'}),
+                rateEl),
+            e('hr'),
+            monthsOverCreditPayEl,
+            payOverCreditMonthsEl,
+            creditOverPayMonthsEl,
+            graph,
+        )
+    );
+    calc();
+</script>

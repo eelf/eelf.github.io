@@ -1,0 +1,313 @@
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <style>
+        * {
+            background: #000;
+            color: rgb(168, 168, 168);
+            font: 14px Menlo;
+            padding: 0;
+            margin: 0;
+            border: 0;
+        }
+
+        .yellowonblue {
+            background: rgb(0, 0, 161);
+            color: rgb(255, 255, 116);
+        }
+
+        .blackondarkcyan {
+            background: rgb(75, 165, 167);
+            color: #000;
+        }
+
+        .cyanonblue {
+            background: rgb(0, 0, 161);
+            color: rgb(138, 252, 253);
+        }
+
+        .blueoncyan {
+            background: rgb(138, 252, 253);
+            color: rgb(0, 0, 161);
+        }
+
+        #app {
+            white-space: pre;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+    let active = 36;
+    let offset = 36;
+
+    let items = [
+        {name: 'DOS', dir: true},//+0
+        {name: 'KEYRUS', dir: true},
+        {name: 'NC', dir: true, date: ' 4/23/09  8:01p'},
+        {name: 'autoexec.bat', size: 255},
+        {name: 'command.com', size: 234054},
+        {name: 'config.sys', size: 300},
+        {name: 'Io.sys', flag: 1},
+        {name: 'Msdos.sys', flag: 1},
+
+        {name: '123VIEW.EX!'},
+        {name: '4372ANSI.SET'},
+        {name: '8502ANSI.SET'},
+        {name: '8522ANSI.SET'},
+        {name: '8632ANSI.SET'},
+        {name: '8652ANSI.SET'},
+        {name: '8662ANSI.SET'},
+        {name: 'ANSI2437.SET'},
+        {name: 'ANSI2850.SET'},
+        {name: 'ANSI2852.SET'},//+17
+        {name: 'ANSI2863.SET'},//+18
+        {name: 'ANSI2865.SET'},
+        {name: 'ANSI2866.SET'},
+        {name: 'ARCVIEW.EX!'},
+        {name: 'BITMAP.EX!'},
+        {name: 'BUG.NS!'},
+        {name: 'BUNGEE.NS!'},
+        {name: 'CLP2DIB.EX!'},
+        {name: 'DBVIEW.EX!'},
+        {name: 'DRAW2WMF.EX!'},
+        {name: 'DRW2WMF.EX!'},
+        {name: 'EVILEYE.NS!'},
+        {name: 'FACES.NS!'},
+        {name: 'FISH.NS!'},
+        {name: 'FLIP.NS!'},
+        {name: 'ICO2DIB.EX!'},
+        {name: 'INSTALL.CFG'},
+        {name: 'INSTALL.EXE'},
+        {name: 'INSTALLD.EXE'},//+36
+        {name: 'MESSAGE.MS!'},
+        {name: 'MOUSE.NS!'},
+        {name: 'MSP2DIB.EX!'},
+        {name: 'NC.CFG'},
+        {name: 'NC.EXE'},
+        {name: 'NC.FIL'},
+        {name: 'NC.HLP'},
+        {name: 'NC.IC!'},
+        {name: 'NC.INI'},
+        {name: 'NC.MSG'},
+        {name: 'NC5EV'},
+        {name: 'NCCLEAN.EXE'},
+        {name: 'NCCLEAN.INI'},
+        {name: 'NCDD.EX!'},
+        {name: 'NCEDIT.EXE'},
+        {name: 'NCEDIT.MSG'},
+        {name: 'NCFF.EXE'},//+53
+        {name: 'NCFF.HL!'},//+54
+        {name: 'NCFF.MSG'},
+        {name: 'NCLABEL.EX!'},
+        {name: 'NCMAIN.EXE'},
+        {name: 'NCNET.EX!'},
+        {name: 'NCPSCRIP.HD!'},
+        {name: 'NCSF.EX!'},
+        {name: 'NCSI.EX!'},
+        {name: 'NCZIP.EXE'},
+        {name: 'NCZIP.MSG'},
+        {name: 'NC_EXIT.CO!'},
+        {name: 'NC_EXIT.DO!'},
+        {name: 'NORTON.IN!'},
+        {name: 'PACKER.EX!'},
+        {name: 'PACKER.SET'},
+        {name: 'PARAVIEW.EX!'},
+        {name: 'PCT2DIB.EX!'},
+        {name: 'PLAYWAVE.EX!'},//+71
+        {name: 'Q&AVIEW.EX!'},//+72
+        {name: 'RBVIEW.EX!'},
+        {name: 'README.TXT'},
+        {name: 'REFVIEW.EX!'},
+        {name: 'SAVER.EX!'},
+        {name: 'SYMCFG.BIN'},
+        {name: 'TELEMAX.DA!'},
+        {name: 'TELEMAX.EX!'},
+        {name: 'TELEMAX.HL!'},
+        {name: 'TELEMAX.IN!'},
+        {name: 'TELEMAX.NM!'},
+        {name: 'TIF2DIB.EX!'},
+        {name: 'TORNADO.NS!'},
+        {name: 'TORNADO.NS!'},
+        {name: 'TORNADO.NS!'},
+        {name: '4VECTOR.EX!'},
+        {name: '3WHATS.NEW'},
+        {name: '2WPB2DIB.EX!'},//+89
+        {name: '1WPV2WMF.EX!'},//+90
+        {name: '0WPVIEW.EX!'},//+91
+    ];
+
+    function render(viewList, active) {
+        let app = document.getElementById('app');
+
+        //flag1:\u2592
+
+        let rows = [];
+        for (let i = 0; i < 18; i++) {
+            rows.push([i, viewList[i], 18 + i, viewList[18 + i], 18 * 2 + i, viewList[18 * 2 + i]]);
+        }
+
+        let fmtName = r => {
+            if (r === undefined) {
+                return ' '.repeat(12);
+            }
+            let [name, ext] = r.name.split('.');
+            if (ext === undefined) ext = '';
+            return name.padEnd(8, ' ') + (r.flag ? '\u2592' : ' ') + ext.padEnd(3, ' ');
+        };
+        let fmtDirOrSize = r => {
+            if (r.dir === true) {
+                return ' \u25baКАТАЛОГ\u25c4';
+            }
+            let size = r.size || 420;
+            return ' ' + size.toFixed(0).padStart(9, ' ');
+        }
+        let fmtDate = r => {
+            if (r.date) {
+                return ' ' + r.date;
+            }
+            return ' ' + ' 1/10/07  9:24a';
+        }
+
+
+        app.innerHTML = '<span class="cyanonblue">\u2554' + '\u2550'.repeat(12) + '\u2564'
+            + '\u2550'.repeat(12) + '\u2564' + '\u2550'.repeat(12) + '\u2557'
+            + '\u2554' + '\u2550'.repeat(38) + '\u2557'
+            + ('\n' + '\u2551'
+                + '<span class="yellowonblue">C:\u2193 Имя</span>     \u2502'
+                + '<span class="yellowonblue">C:\u2193 Имя</span>     \u2502'
+                + '<span class="yellowonblue">C:\u2193 Имя</span>     \u2551')
+            + ('\u2551' + ' '.repeat(38) + '\u2551')
+
+            + rows.map(r =>
+                ('\n' + '\u2551'
+                    + (r[0] == active ? '<span class="blueoncyan">' : '') + fmtName(r[1]) + (r[0] == active ? '</span>' : '') + '\u2502'
+                    + (r[2] == active ? '<span class="blueoncyan">' : '') + fmtName(r[3]) + (r[2] == active ? '</span>' : '') + '\u2502'
+                    + (r[4] == active ? '<span class="blueoncyan">' : '') + fmtName(r[5]) + (r[4] == active ? '</span>' : '') + '\u2551'
+                    // + ' '.repeat(12) + '\u2502' + ' '.repeat(12) + '\u2551' + '\u2551' + ' '.repeat(38) + '\u2551'
+                )
+            ).join('')
+
+            // + ('\n' + '\u2551' + '<span class="blueoncyan">DOS         </span>\u2502'+' '.repeat(12)+'\u2502'+' '.repeat(12) + '\u2551' + '\u2551' + ' '.repeat(38) + '\u2551')
+            // + ('\n' + '\u2551' + 'KEYRUS      \u2502'+' '.repeat(12)+'\u2502'+' '.repeat(12) + '\u2551' + '\u2551' + ' '.repeat(38) + '\u2551')
+            // + ('\n' + '\u2551' + 'NC          \u2502'+' '.repeat(12)+'\u2502'+' '.repeat(12) + '\u2551' + '\u2551' + ' '.repeat(38) + '\u2551')
+            // + ('\n' + '\u2551' + 'autoexec bat\u2502'+' '.repeat(12)+'\u2502'+' '.repeat(12) + '\u2551' + '\u2551' + ' '.repeat(38) + '\u2551')
+            // + ('\n' + '\u2551' + 'command  com\u2502'+' '.repeat(12)+'\u2502'+' '.repeat(12) + '\u2551' + '\u2551' + ' '.repeat(38) + '\u2551')
+            // + ('\n' + '\u2551' + 'config   sys\u2502'+' '.repeat(12)+'\u2502'+' '.repeat(12) + '\u2551' + '\u2551' + ' '.repeat(38) + '\u2551')
+            // + ('\n' + '\u2551' + 'Io      \u2592sys\u2502'+' '.repeat(12)+'\u2502'+' '.repeat(12) + '\u2551' + '\u2551' + ' '.repeat(38) + '\u2551')
+            // + ('\n' + '\u2551' + 'Msdos   \u2592sys\u2502'+' '.repeat(12)+'\u2502'+' '.repeat(12) + '\u2551' + '\u2551' + ' '.repeat(38) + '\u2551')
+
+            // + ('\n' + '\u2551' + ' '.repeat(38) + '\u2551' + '\u2551' + ' '.repeat(38) + '\u2551').repeat(10)
+
+            + ('\n' + '\u255f' + '\u2500'.repeat(38) + '\u2562') + ('\u255f' + '\u2500'.repeat(38) + '\u2562')
+            + ('\n' + '\u2551' + fmtName(viewList[active]) + fmtDirOrSize(viewList[active])
+                + fmtDate(viewList[active])
+                + '\u2551') + ('\u2551' + ' '.repeat(38) + '\u2551')
+            + '\n' + '\u255a' + '\u2550'.repeat(38) + '\u255d' + '\u255a' + '\u2550'.repeat(38) + '\u255d</span>'
+            + '\n' + 'C:\\>_'
+            + '\n' + '1<span class="blackondarkcyan">Помощь</span>'
+            + ' ' + '2<span class="blackondarkcyan">Вызов </span>'
+            + ' ' + '3<span class="blackondarkcyan">Чтение</span>'
+            + ' ' + '4<span class="blackondarkcyan">Правка</span>'
+            + ' ' + '5<span class="blackondarkcyan">Копия </span>'
+            + ' ' + '6<span class="blackondarkcyan">НовИмя</span>'
+            + ' ' + '7<span class="blackondarkcyan">НовКат</span>'
+            + ' ' + '8<span class="blackondarkcyan">Удал-е</span>'
+            + ' ' + '9<span class="blackondarkcyan">Меню  </span>'
+            + ' ' + '10<span class="blackondarkcyan">Выход </span>';
+    }
+
+    render(items.slice(offset, offset + 18 * 3), active);
+
+    document.addEventListener('keydown', e => {
+        // console.log(e.key);
+        if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', '-'].indexOf(e.key) === -1) return;
+        if (e.key == '-') {
+            items = items.slice(0, items.length - 1);
+        }
+        if (e.key == 'ArrowLeft') {
+            if (active < 18) {
+                //check if can add 18
+                if (offset >= 18) {
+                    offset -= 18;
+                    // } else if (offset>0) {
+                    //     let move = 18-offset;
+                    //     console.log('move', move);
+                    // active=0;
+                    // offset=0;
+                    // offset+=18-move;
+                    // active+=move;
+                } else {
+                    offset = 0;
+                    active = 0;
+                }
+            } else {
+                active -= 18;
+            }
+        }
+        if (e.key == 'ArrowRight') {
+            let inc = 18;
+            if (offset + active + inc > items.length - 1) {
+                inc = items.length - 1 - (offset + active);
+                // console.log('inc limit len', inc);
+            }
+
+            if (active + inc >= 18 * 3) {
+                // let right = items.length - (offset + 18);
+                let right = items.length - (offset + inc);
+                // if (right >= 18 * 3-15) {
+                if (right >= 18 * 3) {
+                    let incOrig = inc;
+                    offset += inc;
+                    inc = 0;
+                    // console.log('inc limit view offset only', inc, incOrig, right);
+                } else {
+                    let incOffset = 18*3-right,
+                        i2 = 18-incOffset;
+
+                    if (incOffset<15)i2=incOffset;
+
+                    inc = 18 * 3 - 1 - active;
+                    offset+=i2;
+                    console.log('inc limit view both', right, incOffset, i2);
+                    // let incOrig = inc;
+                    // inc = 18 * 3 - 1 - active;
+                    // let incOffset = incOrig - inc;
+                    // offset += incOffset;
+                    // let a = items.length - offset - incOrig,
+                    //     b = 18 * 3 - a,
+                    //     c = 18 - b,
+                    //     d = c - 1;
+                    // offset += d;
+                    // console.log('inc limit view', inc, incOrig, a, b, c, d, incOffset+inc);
+                    //qna 17 39 15 3 2  2
+                    //rbv 16 40 14 4 3  2
+                    //rea 15 41 13 5 4  2
+                }
+            }
+            active += inc;
+        }
+        if (e.key == 'ArrowDown') {
+            if (offset + active < items.length - 1) {
+                if (active == 18 * 3 - 1) {
+                    offset++;
+                } else {
+                    active++;
+                }
+            }
+        }
+        if (e.key == 'ArrowUp') {
+            if (active > 0) {
+                active--;
+            } else if (offset > 0) {
+                offset--;
+            }
+        }
+        // console.log('oa', offset, active, items.length)
+        render(items.slice(offset, offset + 18 * 3), active);
+    })
+</script>
+</body>
+</html>
